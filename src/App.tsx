@@ -14,7 +14,6 @@ function App() {
   });
 
   const [input, setInput] = useState("");
-  const [draggedTask, setDraggedTask] = useState<number | null>(null);
 
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
@@ -34,20 +33,20 @@ function App() {
     setTasks(tasks.filter((t) => t.id !== id));
   };
 
-  const handleDragStart = (id: number) => {
-    setDraggedTask(id);
+  // ✅ DRAG START
+  const handleDragStart = (e: React.DragEvent, id: number) => {
+    e.dataTransfer.setData("taskId", id.toString());
   };
 
-  const handleDrop = (status: string) => {
-    if (draggedTask === null) return;
+  // ✅ DROP
+  const handleDrop = (e: React.DragEvent, status: string) => {
+    const id = Number(e.dataTransfer.getData("taskId"));
 
-    setTasks(
-      tasks.map((t) =>
-        t.id === draggedTask ? { ...t, status } : t
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, status } : t
       )
     );
-
-    setDraggedTask(null);
   };
 
   const renderTasks = (status: string) => {
@@ -58,7 +57,7 @@ function App() {
           key={t.id}
           className="task"
           draggable
-          onDragStart={() => handleDragStart(t.id)}
+          onDragStart={(e) => handleDragStart(e, t.id)}
         >
           <p>{t.text}</p>
           <button onClick={() => deleteTask(t.id)}>❌</button>
@@ -85,7 +84,7 @@ function App() {
             key={status}
             className="column"
             onDragOver={(e) => e.preventDefault()}
-            onDrop={() => handleDrop(status)}
+            onDrop={(e) => handleDrop(e, status)}
           >
             <h2>{status}</h2>
             {renderTasks(status)}

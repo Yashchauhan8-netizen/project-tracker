@@ -43,6 +43,11 @@ button {
   border-radius: 10px;
   width: 22%;
   min-height: 300px;
+  transition: 0.2s;
+}
+
+.column:hover {
+  background: #334155;
 }
 
 .task {
