@@ -8,62 +8,60 @@ type Task = {
 };
 
 function App() {
-  // 🔥 Load from localStorage
   const [tasks, setTasks] = useState<Task[]>(() => {
     const saved = localStorage.getItem("tasks");
     return saved ? JSON.parse(saved) : [];
   });
 
   const [input, setInput] = useState("");
+  const [draggedTask, setDraggedTask] = useState<number | null>(null);
 
-  // 🔥 Save to localStorage
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
   const addTask = () => {
-    if (input.trim() === "") return;
+    if (!input.trim()) return;
 
-    const newTask: Task = {
-      id: Date.now(),
-      text: input,
-      status: "todo",
-    };
-
-    setTasks([...tasks, newTask]);
+    setTasks([
+      ...tasks,
+      { id: Date.now(), text: input, status: "todo" },
+    ]);
     setInput("");
   };
 
-  const moveTask = (id: number, status: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, status } : task
-      )
-    );
+  const deleteTask = (id: number) => {
+    setTasks(tasks.filter((t) => t.id !== id));
   };
 
-  const deleteTask = (id: number) => {
-    setTasks(tasks.filter((task) => task.id !== id));
+  const handleDragStart = (id: number) => {
+    setDraggedTask(id);
+  };
+
+  const handleDrop = (status: string) => {
+    if (draggedTask === null) return;
+
+    setTasks(
+      tasks.map((t) =>
+        t.id === draggedTask ? { ...t, status } : t
+      )
+    );
+
+    setDraggedTask(null);
   };
 
   const renderTasks = (status: string) => {
     return tasks
-      .filter((task) => task.status === status)
-      .map((task) => (
-        <div key={task.id} className="task">
-          <p>{task.text}</p>
-
-          <select
-            value={task.status}
-            onChange={(e) => moveTask(task.id, e.target.value)}
-          >
-            <option value="todo">Todo</option>
-            <option value="progress">Progress</option>
-            <option value="review">Review</option>
-            <option value="done">Done</option>
-          </select>
-
-          <button onClick={() => deleteTask(task.id)}>❌</button>
+      .filter((t) => t.status === status)
+      .map((t) => (
+        <div
+          key={t.id}
+          className="task"
+          draggable
+          onDragStart={() => handleDragStart(t.id)}
+        >
+          <p>{t.text}</p>
+          <button onClick={() => deleteTask(t.id)}>❌</button>
         </div>
       ));
   };
@@ -74,34 +72,25 @@ function App() {
 
       <div className="input-section">
         <input
-          type="text"
-          placeholder="Enter task..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          placeholder="Enter task..."
         />
         <button onClick={addTask}>Add</button>
       </div>
 
       <div className="board">
-        <div className="column">
-          <h2>To Do</h2>
-          {renderTasks("todo")}
-        </div>
-
-        <div className="column">
-          <h2>In Progress</h2>
-          {renderTasks("progress")}
-        </div>
-
-        <div className="column">
-          <h2>In Review</h2>
-          {renderTasks("review")}
-        </div>
-
-        <div className="column">
-          <h2>Done</h2>
-          {renderTasks("done")}
-        </div>
+        {["todo", "progress", "review", "done"].map((status) => (
+          <div
+            key={status}
+            className="column"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => handleDrop(status)}
+          >
+            <h2>{status}</h2>
+            {renderTasks(status)}
+          </div>
+        ))}
       </div>
     </div>
   );
